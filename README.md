@@ -17,10 +17,11 @@ Usa apenas a biblioteca padrão do Python 3, então não há nada para instalar.
 
 | Requisito | Como foi atendido |
 |---|---|
-| Tela única | Formulário, botões e `Treeview` na mesma janela, sem janelas secundárias |
-| ViaCEP | Botão **Buscar CEP** ou busca automática ao digitar os 8 dígitos; preenche logradouro, bairro e cidade/UF |
+| Tela única | Formulário, botões, filtros e `Treeview` na mesma janela, que abre maximizada. Só a tabela rola |
+| ViaCEP | Botão **Buscar CEP** ou busca automática ao completar 8 dígitos; preenche logradouro, bairro e cidade/UF |
 | API fora do ar | Ao falhar, o sistema oferece **inserir endereço manualmente** (há também uma caixa de seleção para isso) |
 | CRUD | Cadastrar, listar (tabela com cada dado na sua coluna), clicar na linha para editar e excluir com confirmação |
+| Filtros | Dia, mês, ano e busca por cliente, pet, telefone, serviço, bairro ou cidade |
 | Regras de data/hora | Não permite datas nem horários passados. Seg–Sáb, 08h–18h, intervalos de 30 min, até 180 dias de antecedência |
 | Horário ocupado | O combo mostra só horários livres, e o banco tem `data_hora UNIQUE` |
 | Chaves e unicidade | PK em todas as tabelas, `telefone UNIQUE` (um cadastro por cliente), `UNIQUE(tutor_id, nome)` para pets |
@@ -30,8 +31,8 @@ Usa apenas a biblioteca padrão do Python 3, então não há nada para instalar.
 ## Modelo de dados
 
 ```
-tutores (id PK, nome, telefone UNIQUE, cep, logradouro, numero, bairro, cidade_uf)
-pets    (id PK, tutor_id FK → tutores, nome, UNIQUE(tutor_id, nome))
+tutores      (id PK, nome, telefone UNIQUE, cep, logradouro, numero, bairro, cidade_uf)
+pets         (id PK, tutor_id FK → tutores, nome, UNIQUE(tutor_id, nome))
 agendamentos (id PK, pet_id FK → pets, servico, data_hora UNIQUE, criado_em)
 ```
 
@@ -40,9 +41,8 @@ agendamentos (id PK, pet_id FK → pets, servico, data_hora UNIQUE, criado_em)
 | Arquivo | Conteúdo |
 |---|---|
 | `petshop_app.py` | Aplicação desktop (tkinter) |
-| `petshop.db` | Banco SQLite com dados de teste |
-| `log_agendamentos.txt` | Log de auditoria gerado nos testes |
+| `petshop.db` | Banco SQLite |
+| `log_agendamentos.txt` | Log de auditoria (criado no primeiro uso) |
 | `Relatorio_RAD.pdf` | Relatório RAD (2 páginas) |
 | `test_regras.py` | 19 testes automatizados (`python -m unittest test_regras -v`) |
-| `gerar_dados_teste.py` | Popula o banco com dados fictícios (Faker): `pip install faker` |
 | `docs/` | Versão web publicada no GitHub Pages |

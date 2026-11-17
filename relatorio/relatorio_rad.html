@@ -29,13 +29,14 @@
   <li><b>API pública ViaCEP</b>: dispensou manter uma base de endereços, já que um único GET preenche logradouro, bairro e cidade/UF. Como a API pode ficar fora do ar, foi criada a opção <i>“Inserir endereço manualmente”</i>, oferecida automaticamente quando a consulta falha.</li>
   <li><b>Regras de agenda centralizadas em constantes</b>: segunda a sábado, das 08h às 18h, em intervalos de 30 min e com até 180 dias de antecedência. Datas e horários passados são bloqueados, e o combo de horários exibe apenas horários livres e futuros.</li>
   <li><b>Log de auditoria</b> em <code>log_agendamentos.txt</code>, aberto em modo <code>'a'</code>, com uma linha por consulta de CEP, inserção, atualização e exclusão.</li>
+  <li><b>Filtros na própria tela</b>: dia, mês, ano e uma busca livre (cliente, pet, telefone, serviço, bairro ou cidade), montados como cláusulas <code>WHERE</code> com parâmetros <code>?</code>. A janela abre maximizada, e só a tabela da agenda tem rolagem.</li>
 </ul>
 
 <h2>2. Estratégia de teste</h2>
 <ul>
-  <li><b>Testes automatizados</b> (<code>test_regras.py</code>, 19 casos com <code>unittest</code>): data passada, horário já passado no dia, domingo, fora do expediente, data inexistente, antecedência máxima, limpeza de entradas, CRUD completo, horário ocupado, telefone único por cliente, reaproveitamento de cadastro, constraint UNIQUE no SQLite, API fora do ar (simulada com <code>mock</code>) e log em modo <code>'a'</code>. Cada teste usa um banco temporário e um “agora” fixo, então o resultado é o mesmo em qualquer dia.</li>
-  <li><b>Dados fictícios com Faker</b> (<code>gerar_dados_teste.py</code>): gera tutores, telefones e pets em pt_BR, consulta CEPs reais no ViaCEP e grava usando as mesmas funções da interface, populando o <code>petshop.db</code> e o <code>log_agendamentos.txt</code> entregues.</li>
-  <li><b>Teste na interface</b>: cadastro com busca de CEP, CEP inválido e inexistente, rede desligada (modo manual), clique na grade para editar, exclusão com confirmação e tentativa de reservar um horário ocupado. A versão web de demonstração também foi testada de forma automatizada no navegador (Playwright).</li>
+  <li><b>Testes automatizados</b> (<code>test_regras.py</code>, 19 casos com <code>unittest</code>): data passada, horário já passado no dia, domingo, fora do expediente, data inexistente, antecedência máxima, limpeza de entradas, CRUD completo, horário ocupado, telefone único por cliente, reaproveitamento de cadastro, constraint UNIQUE no SQLite, filtros, API fora do ar (simulada com <code>mock</code>) e log em modo <code>'a'</code>. Cada teste usa um banco temporário e um “agora” fixo, então o resultado é o mesmo em qualquer dia.</li>
+  <li><b>Dados fictícios na primeira iteração</b>: no início, a biblioteca Faker gerou tutores, telefones e pets em pt_BR para popular a agenda e validar a tabela e os filtros. Na versão final, o banco foi zerado e os agendamentos entregues foram cadastrados manualmente pela interface, gerando o <code>log_agendamentos.txt</code> real.</li>
+  <li><b>Teste na interface</b>: cadastro com busca de CEP, CEP inválido e inexistente, rede desligada (modo manual), clique na grade para editar, exclusão com confirmação, tentativa de reservar horário ocupado e uso dos filtros. A versão web de demonstração também foi testada de forma automatizada no navegador (Playwright).</li>
 </ul>
 
 <h2>3. Visão de futuro (versão 2.0)</h2>
@@ -45,6 +46,6 @@
 </ul>
 
 <h2>4. Entregáveis</h2>
-<p><code>petshop_app.py</code> (aplicação) · <code>petshop.db</code> (banco SQLite) · <code>log_agendamentos.txt</code> (log de auditoria) · <code>Relatorio_RAD.pdf</code> (este relatório). O repositório também contém os testes, o gerador de dados e uma versão web de demonstração publicada no GitHub Pages: <b>roseniltonlopes.github.io/rad-petshop</b>.</p>
+<p><code>petshop_app.py</code> (aplicação) · <code>petshop.db</code> (banco SQLite) · <code>log_agendamentos.txt</code> (log de auditoria) · <code>Relatorio_RAD.pdf</code> (este relatório). O repositório também contém os testes automatizados e uma versão web de demonstração publicada no GitHub Pages: <b>roseniltonlopes.github.io/rad-petshop</b>.</p>
 </body>
 </html>
