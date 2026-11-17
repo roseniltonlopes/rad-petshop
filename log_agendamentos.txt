@@ -1,0 +1,40 @@
+[16/11/2026 23:19:08] CONSULTA CEP - CEP "60025-060" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:08] INSERÇÃO - Agendamento Pet "Thor" (Responsável: Francisco Holanda, Serviço: Consulta) cadastrado com sucesso.
+[16/11/2026 23:19:08] CONSULTA CEP - CEP "60025-061" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:08] INSERÇÃO - Agendamento Pet "Mel" (Responsável: Maria Lúcia Bezerra, Serviço: Vacinação) cadastrado com sucesso.
+[16/11/2026 23:19:09] CONSULTA CEP - CEP "60025-002" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:09] INSERÇÃO - Agendamento Pet "Pipoca" (Responsável: Antônio Carlos Pinheiro, Serviço: Banho e Tosa) cadastrado com sucesso.
+[16/11/2026 23:19:09] CONSULTA CEP - CEP "60025-001" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:09] INSERÇÃO - Agendamento Pet "Luna" (Responsável: Raimunda Nogueira, Serviço: Banho) cadastrado com sucesso.
+[16/11/2026 23:19:09] CONSULTA CEP - CEP "60030-140" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:09] INSERÇÃO - Agendamento Pet "Bob" (Responsável: José Airton Cavalcante, Serviço: Tosa) cadastrado com sucesso.
+[16/11/2026 23:19:09] CONSULTA CEP - CEP "60160-196" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:09] INSERÇÃO - Agendamento Pet "Nina" (Responsável: Fernanda Albuquerque, Serviço: Exame) cadastrado com sucesso.
+[16/11/2026 23:19:10] CONSULTA CEP - CEP "60160-230" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:10] INSERÇÃO - Agendamento Pet "Max" (Responsável: Ricardo Távora, Serviço: Consulta) cadastrado com sucesso.
+[16/11/2026 23:19:10] CONSULTA CEP - CEP "60020-180" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:10] INSERÇÃO - Agendamento Pet "Belinha" (Responsável: Juliana Sampaio, Serviço: Vacinação) cadastrado com sucesso.
+[16/11/2026 23:19:10] CONSULTA CEP - CEP "60015-123" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:10] INSERÇÃO - Agendamento Pet "Simba" (Responsável: Paulo Henrique Arruda, Serviço: Banho e Tosa) cadastrado com sucesso.
+[16/11/2026 23:19:11] CONSULTA CEP - CEP "60040-531" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:11] INSERÇÃO - Agendamento Pet "Frida" (Responsável: Cláudia Maia, Serviço: Banho) cadastrado com sucesso.
+[16/11/2026 23:19:11] CONSULTA CEP - CEP "60040-530" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:11] INSERÇÃO - Agendamento Pet "Zeus" (Responsável: Marcos Vinícius Lima, Serviço: Tosa) cadastrado com sucesso.
+[16/11/2026 23:19:11] CONSULTA CEP - CEP "60060-390" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:11] INSERÇÃO - Agendamento Pet "Amora" (Responsável: Ana Beatriz Fontenele, Serviço: Exame) cadastrado com sucesso.
+[16/11/2026 23:19:11] CONSULTA CEP - CEP "60165-011" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:11] INSERÇÃO - Agendamento Pet "Rex" (Responsável: Sérgio Benevides, Serviço: Consulta) cadastrado com sucesso.
+[16/11/2026 23:19:12] CONSULTA CEP - CEP "60165-065" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:12] INSERÇÃO - Agendamento Pet "Cacau" (Responsável: Patrícia Gurgel, Serviço: Vacinação) cadastrado com sucesso.
+[16/11/2026 23:19:12] CONSULTA CEP - CEP "60135-041" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:12] INSERÇÃO - Agendamento Pet "Fred" (Responsável: Luiz Gonzaga Rocha, Serviço: Banho e Tosa) cadastrado com sucesso.
+[16/11/2026 23:19:12] CONSULTA CEP - CEP "60135-040" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:12] INSERÇÃO - Agendamento Pet "Lola" (Responsável: Tereza Cristina Moura, Serviço: Banho) cadastrado com sucesso.
+[16/11/2026 23:19:12] CONSULTA CEP - CEP "60015-061" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:12] INSERÇÃO - Agendamento Pet "Paçoca" (Responsável: Daniel Façanha, Serviço: Tosa) cadastrado com sucesso.
+[16/11/2026 23:19:13] CONSULTA CEP - CEP "60135-101" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:13] INSERÇÃO - Agendamento Pet "Princesa" (Responsável: Isabela Castelo Branco, Serviço: Exame) cadastrado com sucesso.
+[16/11/2026 23:19:13] CONSULTA CEP - CEP "60325-001" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:13] INSERÇÃO - Agendamento Pet "Chico" (Responsável: Roberto Studart, Serviço: Consulta) cadastrado com sucesso.
+[16/11/2026 23:19:13] CONSULTA CEP - CEP "60325-004" consultado com sucesso (Fortaleza/CE).
+[16/11/2026 23:19:13] INSERÇÃO - Agendamento Pet "Maya" (Responsável: Camila Diógenes, Serviço: Vacinação) cadastrado com sucesso.

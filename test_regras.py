@@ -12,7 +12,7 @@ AGORA = datetime(2026, 11, 16, 10, 15)  # uma segunda-feira às 10:15 (data fixa
 
 
 def formulario(**alteracoes):
-    campos = {"pet": "  Thor ", "tutor": "Carlos  Silva", "telefone": "(21) 99876-5432",
+    campos = {"pet": "  Thor ", "responsavel": "Carlos  Silva", "telefone": "(21) 99876-5432",
               "cep": "20020-010", "logradouro": "Av. Rio Branco", "numero": "100",
               "bairro": "Centro", "cidade_uf": "Rio de Janeiro/RJ", "servico": "Banho e Tosa",
               "data": "17/11/2026", "hora": "09:00"}
@@ -54,7 +54,7 @@ class TestLimpezaDasEntradas(unittest.TestCase):
     def test_limpa_espacos_e_caracteres(self):
         dados = formulario()
         self.assertEqual(dados["pet"], "Thor")
-        self.assertEqual(dados["tutor"], "Carlos Silva")
+        self.assertEqual(dados["responsavel"], "Carlos Silva")
         self.assertEqual(dados["telefone"], "21998765432")
         self.assertEqual(dados["cep"], "20020-010")
         self.assertEqual(dados["data_hora"], "2026-11-17 09:00")
@@ -86,7 +86,7 @@ class TestBanco(unittest.TestCase):
     def test_nao_reserva_horario_ocupado(self):
         self.banco.salvar(formulario())
         with self.assertRaisesRegex(app.RegraNegocioError, "já está reservado"):
-            self.banco.salvar(formulario(pet="Mel", tutor="Ana", telefone="11912345678"))
+            self.banco.salvar(formulario(pet="Mel", responsavel="Ana", telefone="11912345678"))
 
     def test_editar_mantendo_o_mesmo_horario(self):
         id_ = self.banco.salvar(formulario())
@@ -96,14 +96,14 @@ class TestBanco(unittest.TestCase):
     def test_telefone_unico_por_cliente(self):
         self.banco.salvar(formulario())
         with self.assertRaisesRegex(app.RegraNegocioError, "já pertence"):
-            self.banco.salvar(formulario(tutor="Outra Pessoa", hora="10:00"))
+            self.banco.salvar(formulario(responsavel="Outra Pessoa", hora="10:00"))
 
     def test_mesmo_cliente_reaproveita_o_cadastro(self):
         self.banco.salvar(formulario())
         self.banco.salvar(formulario(pet="thor", hora="10:00"))  # mesmo pet (maiúsc./minúsc.)
-        self.banco.salvar(formulario(pet="Mel", hora="10:30"))   # pet novo do mesmo tutor
+        self.banco.salvar(formulario(pet="Mel", hora="10:30"))   # pet novo do mesmo responsável
         contar = lambda tabela: self.banco.con.execute(f"SELECT COUNT(*) FROM {tabela}").fetchone()[0]
-        self.assertEqual(contar("tutores"), 1)
+        self.assertEqual(contar("responsaveis"), 1)
         self.assertEqual(contar("pets"), 2)
 
     def test_restricao_unique_no_proprio_banco(self):
@@ -122,7 +122,7 @@ class TestBanco(unittest.TestCase):
 
     def test_filtros(self):
         self.banco.salvar(formulario())                                                  # 17/11
-        self.banco.salvar(formulario(pet="Mel", tutor="Ana Souza", telefone="11912345678",
+        self.banco.salvar(formulario(pet="Mel", responsavel="Ana Souza", telefone="11912345678",
                                      data="03/12/2026", servico="Consulta"))            # 03/12
         self.assertEqual(len(self.banco.listar(mes="11")), 1)
         self.assertEqual(len(self.banco.listar(dia="03", mes="12", ano="2026")), 1)

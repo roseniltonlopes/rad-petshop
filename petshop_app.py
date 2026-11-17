@@ -153,12 +153,12 @@ def validar_data_hora(data_texto, hora_texto, agora=None):
 def preparar_dados(campos, agora=None):
     """Limpa e valida os campos do formulário. Devolve um dicionário pronto para o banco."""
     dados = {chave: limpar_texto(campos.get(chave))
-             for chave in ("pet", "tutor", "logradouro", "numero", "bairro", "cidade_uf", "servico")}
+             for chave in ("pet", "responsavel", "logradouro", "numero", "bairro", "cidade_uf", "servico")}
 
     if not dados["pet"]:
         raise RegraNegocioError("Informe o nome do pet.")
-    if not dados["tutor"]:
-        raise RegraNegocioError("Informe o nome do tutor.")
+    if not dados["responsavel"]:
+        raise RegraNegocioError("Informe o nome do responsável.")
     dados["telefone"] = validar_telefone(campos.get("telefone"))
     dados["cep"] = formatar_cep(validar_cep(campos.get("cep")))
     if not (dados["logradouro"] and dados["bairro"] and dados["cidade_uf"]):
@@ -207,7 +207,7 @@ def consultar_cep(cep, timeout=5):
 # 5. Banco de dados
 # ==========================================================================
 ESQUEMA = """
-CREATE TABLE IF NOT EXISTS tutores (
+CREATE TABLE IF NOT EXISTS responsaveis (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     nome        TEXT NOT NULL,
     telefone    TEXT NOT NULL UNIQUE,      -- identifica o cliente: um cadastro por pessoa
@@ -218,10 +218,10 @@ CREATE TABLE IF NOT EXISTS tutores (
     cidade_uf   TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS pets (
-    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-    tutor_id  INTEGER NOT NULL REFERENCES tutores(id) ON DELETE CASCADE,
-    nome      TEXT NOT NULL COLLATE NOCASE,
-    UNIQUE (tutor_id, nome)                -- o mesmo tutor não repete o nome do pet
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    responsavel_id  INTEGER NOT NULL REFERENCES responsaveis(id) ON DELETE CASCADE,
+    nome            TEXT NOT NULL COLLATE NOCASE,
+    UNIQUE (responsavel_id, nome)          -- o mesmo responsável não repete o nome do pet
 );
 CREATE TABLE IF NOT EXISTS agendamentos (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -233,11 +233,11 @@ CREATE TABLE IF NOT EXISTS agendamentos (
 """
 
 CONSULTA_AGENDAMENTOS = """
-SELECT a.id, p.nome, t.nome, t.telefone, t.cep, t.logradouro, t.numero,
-       t.bairro, t.cidade_uf, a.servico, a.data_hora
+SELECT a.id, p.nome, r.nome, r.telefone, r.cep, r.logradouro, r.numero,
+       r.bairro, r.cidade_uf, a.servico, a.data_hora
   FROM agendamentos a
-  JOIN pets p    ON p.id = a.pet_id
-  JOIN tutores t ON t.id = p.tutor_id
+  JOIN pets p         ON p.id = a.pet_id
+  JOIN responsaveis r ON r.id = p.responsavel_id
 """
 
 
@@ -268,8 +268,8 @@ class Banco:
         if busca:
             termo = f"%{busca}%"
             telefone = f"%{somente_digitos(busca) or busca}%"
-            condicoes.append("(p.nome LIKE ? OR t.nome LIKE ? OR t.telefone LIKE ? OR "
-                             "a.servico LIKE ? OR t.bairro LIKE ? OR t.cidade_uf LIKE ?)")
+            condicoes.append("(p.nome LIKE ? OR r.nome LIKE ? OR r.telefone LIKE ? OR "
+                             "a.servico LIKE ? OR r.bairro LIKE ? OR r.cidade_uf LIKE ?)")
             parametros += [termo, termo, telefone, termo, termo, termo]
 
         sql = CONSULTA_AGENDAMENTOS
@@ -301,8 +301,8 @@ class Banco:
         """Cadastra (sem id) ou atualiza (com id) um agendamento. Devolve o id."""
         try:
             with self.con:  # transação: confirma tudo ou desfaz tudo em caso de erro
-                tutor_id = self._salvar_tutor(dados, agendamento_id)
-                pet_id = self._salvar_pet(tutor_id, dados["pet"])
+                responsavel_id = self._salvar_responsavel(dados, agendamento_id)
+                pet_id = self._salvar_pet(responsavel_id, dados["pet"])
                 valores = (pet_id, dados["servico"], dados["data_hora"])
                 if agendamento_id:
                     self.con.execute("UPDATE agendamentos SET pet_id = ?, servico = ?, data_hora = ? "
@@ -321,40 +321,40 @@ class Banco:
         with self.con:
             self.con.execute("DELETE FROM agendamentos WHERE id = ?", (agendamento_id,))
 
-    def _salvar_tutor(self, dados, agendamento_id):
+    def _salvar_responsavel(self, dados, agendamento_id):
         """O telefone identifica o cliente. Reaproveita o cadastro ou cria um novo."""
         dono_do_telefone = self.con.execute(
-            "SELECT id, nome FROM tutores WHERE telefone = ?", (dados["telefone"],)).fetchone()
-        tutor_em_edicao = self._tutor_do_agendamento(agendamento_id)
+            "SELECT id, nome FROM responsaveis WHERE telefone = ?", (dados["telefone"],)).fetchone()
+        responsavel_em_edicao = self._responsavel_do_agendamento(agendamento_id)
 
-        if (dono_do_telefone and dono_do_telefone[0] != tutor_em_edicao
-                and dono_do_telefone[1].casefold() != dados["tutor"].casefold()):
+        if (dono_do_telefone and dono_do_telefone[0] != responsavel_em_edicao
+                and dono_do_telefone[1].casefold() != dados["responsavel"].casefold()):
             raise RegraNegocioError(
                 f"O telefone {formatar_telefone(dados['telefone'])} já pertence ao cliente "
                 f"\"{dono_do_telefone[1]}\". Cada cliente tem um cadastro único.")
 
-        tutor_id = dono_do_telefone[0] if dono_do_telefone else tutor_em_edicao
-        valores = (dados["tutor"], dados["telefone"], dados["cep"], dados["logradouro"],
+        responsavel_id = dono_do_telefone[0] if dono_do_telefone else responsavel_em_edicao
+        valores = (dados["responsavel"], dados["telefone"], dados["cep"], dados["logradouro"],
                    dados["numero"], dados["bairro"], dados["cidade_uf"])
-        if tutor_id:
-            self.con.execute("UPDATE tutores SET nome = ?, telefone = ?, cep = ?, logradouro = ?, "
-                             "numero = ?, bairro = ?, cidade_uf = ? WHERE id = ?", valores + (tutor_id,))
-            return tutor_id
-        return self.con.execute("INSERT INTO tutores (nome, telefone, cep, logradouro, numero, bairro, "
+        if responsavel_id:
+            self.con.execute("UPDATE responsaveis SET nome = ?, telefone = ?, cep = ?, logradouro = ?, "
+                             "numero = ?, bairro = ?, cidade_uf = ? WHERE id = ?", valores + (responsavel_id,))
+            return responsavel_id
+        return self.con.execute("INSERT INTO responsaveis (nome, telefone, cep, logradouro, numero, bairro, "
                                 "cidade_uf) VALUES (?, ?, ?, ?, ?, ?, ?)", valores).lastrowid
 
-    def _salvar_pet(self, tutor_id, nome):
-        pet = self.con.execute("SELECT id FROM pets WHERE tutor_id = ? AND nome = ?",
-                               (tutor_id, nome)).fetchone()
+    def _salvar_pet(self, responsavel_id, nome):
+        pet = self.con.execute("SELECT id FROM pets WHERE responsavel_id = ? AND nome = ?",
+                               (responsavel_id, nome)).fetchone()
         if pet:
             return pet[0]
-        return self.con.execute("INSERT INTO pets (tutor_id, nome) VALUES (?, ?)",
-                                (tutor_id, nome)).lastrowid
+        return self.con.execute("INSERT INTO pets (responsavel_id, nome) VALUES (?, ?)",
+                                (responsavel_id, nome)).lastrowid
 
-    def _tutor_do_agendamento(self, agendamento_id):
+    def _responsavel_do_agendamento(self, agendamento_id):
         if not agendamento_id:
             return None
-        linha = self.con.execute("SELECT p.tutor_id FROM agendamentos a JOIN pets p ON p.id = a.pet_id "
+        linha = self.con.execute("SELECT p.responsavel_id FROM agendamentos a JOIN pets p ON p.id = a.pet_id "
                                  "WHERE a.id = ?", (agendamento_id,)).fetchone()
         return linha[0] if linha else None
 
@@ -368,12 +368,12 @@ COR_TEXTO = "#1F2A27"
 COR_SUAVE = "#5F6B67"
 
 COLUNAS_TABELA = [  # (chave, título, largura)
-    ("id", "ID", 45), ("pet", "Pet", 100), ("tutor", "Tutor", 150), ("telefone", "Telefone", 115),
+    ("id", "ID", 45), ("pet", "Pet", 100), ("responsavel", "Responsável", 150), ("telefone", "Telefone", 115),
     ("cep", "CEP", 80), ("logradouro", "Logradouro", 190), ("numero", "Nº", 60),
     ("bairro", "Bairro", 130), ("cidade_uf", "Cidade/UF", 140), ("servico", "Serviço", 110),
     ("data", "Data", 90), ("hora", "Horário", 70),
 ]
-CAMPOS_FORMULARIO = ["pet", "tutor", "telefone", "cep", "logradouro", "numero",
+CAMPOS_FORMULARIO = ["pet", "responsavel", "telefone", "cep", "logradouro", "numero",
                      "bairro", "cidade_uf", "servico", "data", "hora"]
 
 
@@ -439,16 +439,16 @@ class App:
         for coluna in range(3):
             formulario.columnconfigure(coluna, weight=1, uniform="blocos")
 
-        # Bloco 1: pet e tutor
-        bloco = ttk.LabelFrame(formulario, text="Pet e tutor", padding=8)
+        # Bloco 1: pet e responsável
+        bloco = ttk.LabelFrame(formulario, text="Pet e responsável", padding=8)
         bloco.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
         bloco.columnconfigure(0, weight=1)
         self._campo(bloco, "Nome do pet *", "pet", 0)
-        self._campo(bloco, "Tutor *", "tutor", 2)
+        self._campo(bloco, "Responsável *", "responsavel", 2)
         self._campo(bloco, "Telefone (DDD + número) *", "telefone", 4)
 
         # Bloco 2: endereço (ViaCEP)
-        bloco = ttk.LabelFrame(formulario, text="Endereço do tutor", padding=8)
+        bloco = ttk.LabelFrame(formulario, text="Endereço do responsável", padding=8)
         bloco.grid(row=0, column=1, sticky="nsew", padx=8)
         bloco.columnconfigure(0, weight=2)
         bloco.columnconfigure(1, weight=1)
@@ -670,7 +670,7 @@ class App:
     def cadastrar(self):
         dados = self._salvar()
         if dados:
-            registrar_log("INSERÇÃO", f"Agendamento Pet \"{dados['pet']}\" (Tutor: {dados['tutor']}, "
+            registrar_log("INSERÇÃO", f"Agendamento Pet \"{dados['pet']}\" (Responsável: {dados['responsavel']}, "
                                       f"Serviço: {dados['servico']}) cadastrado com sucesso.")
             self.limpar_formulario()
             messagebox.showinfo("Sucesso", "Agendamento cadastrado com sucesso!")
@@ -710,7 +710,7 @@ class App:
         self.endereco_manual.set(False)
         self._preencher_endereco({"cep": linha[4], "logradouro": linha[5], "bairro": linha[7],
                                   "cidade_uf": linha[8]})
-        for nome, valor in (("pet", linha[1]), ("tutor", linha[2]), ("telefone", formatar_telefone(linha[3])),
+        for nome, valor in (("pet", linha[1]), ("responsavel", linha[2]), ("telefone", formatar_telefone(linha[3])),
                             ("numero", linha[6]), ("servico", linha[9]),
                             ("data", f"{data_hora:%d/%m/%Y}"), ("hora", f"{data_hora:%H:%M}")):
             self.campos[nome].set(valor)
@@ -723,7 +723,7 @@ class App:
         self.ultimo_cep = None
         self.endereco_manual.set(False)
         self._preencher_endereco({"cep": "", "logradouro": "", "bairro": "", "cidade_uf": ""})
-        for nome in ("pet", "tutor", "telefone", "numero", "hora"):
+        for nome in ("pet", "responsavel", "telefone", "numero", "hora"):
             self.campos[nome].set("")
         self.campos["servico"].set(SERVICOS[0])
         self.campos["data"].set(f"{self._proximo_dia_com_horario():%d/%m/%Y}")

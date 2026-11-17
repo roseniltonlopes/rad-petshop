@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Patinhas & Cia — versão web (demonstração no GitHub Pages).
  * Mesmas regras do petshop_app.py: SQLite (via sql.js) com PK e UNIQUE, ViaCEP com
  * preenchimento manual, regras de data/hora, horário único e log de auditoria.
@@ -17,12 +17,12 @@
   const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho",
                  "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const DIAS_SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
-  const CHAVE_BANCO = "patinhas_banco_v2", CHAVE_LOG = "patinhas_log_v2";
-  const CAMPOS = ["pet", "tutor", "telefone", "cep", "logradouro", "numero", "bairro", "cidade_uf", "servico", "data", "hora"];
+  const CHAVE_BANCO = "patinhas_banco_v3", CHAVE_LOG = "patinhas_log_v3";
+  const CAMPOS = ["pet", "responsavel", "telefone", "cep", "logradouro", "numero", "bairro", "cidade_uf", "servico", "data", "hora"];
 
   const ESQUEMA = `
     PRAGMA foreign_keys = ON;
-    CREATE TABLE IF NOT EXISTS tutores (
+    CREATE TABLE IF NOT EXISTS responsaveis (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nome TEXT NOT NULL,
       telefone TEXT NOT NULL UNIQUE,
@@ -30,9 +30,9 @@
       bairro TEXT NOT NULL, cidade_uf TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS pets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tutor_id INTEGER NOT NULL REFERENCES tutores(id) ON DELETE CASCADE,
+      responsavel_id INTEGER NOT NULL REFERENCES responsaveis(id) ON DELETE CASCADE,
       nome TEXT NOT NULL COLLATE NOCASE,
-      UNIQUE (tutor_id, nome));
+      UNIQUE (responsavel_id, nome));
     CREATE TABLE IF NOT EXISTS agendamentos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       pet_id INTEGER NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
@@ -41,11 +41,11 @@
       criado_em TEXT NOT NULL DEFAULT (datetime('now', 'localtime')));`;
 
   const CONSULTA_AGENDAMENTOS = `
-    SELECT a.id, p.nome, t.nome, t.telefone, t.cep, t.logradouro, t.numero,
-           t.bairro, t.cidade_uf, a.servico, a.data_hora
+    SELECT a.id, p.nome, r.nome, r.telefone, r.cep, r.logradouro, r.numero,
+           r.bairro, r.cidade_uf, a.servico, a.data_hora
       FROM agendamentos a
       JOIN pets p    ON p.id = a.pet_id
-      JOIN tutores t ON t.id = p.tutor_id`;
+      JOIN responsaveis r ON r.id = p.responsavel_id`;
 
   class RegraNegocioErro extends Error {}
   class ApiIndisponivelErro extends Error {}
@@ -117,6 +117,15 @@
     } catch { return null; }
   }
 
+  /** Lê um arquivo publicado ao lado da página (petshop.db ou o log). Devolve null se não existir. */
+  async function baixarArquivoPublicado(nome, formato) {
+    try {
+      const resposta = await fetch(nome, { cache: "no-store" });
+      if (!resposta.ok) return null;
+      return formato === "text" ? await resposta.text() : new Uint8Array(await resposta.arrayBuffer());
+    } catch { return null; }
+  }
+
   function listarAgendamentos({ dia, mes, ano, busca }) {
     const condicoes = [], parametros = [];
     if (ano) { condicoes.push("substr(a.data_hora, 1, 4) = ?"); parametros.push(ano); }
@@ -124,7 +133,7 @@
     if (dia) { condicoes.push("substr(a.data_hora, 9, 2) = ?"); parametros.push(dia); }
     if (busca) {
       const termo = `%${busca}%`, telefone = `%${somenteDigitos(busca) || busca}%`;
-      condicoes.push("(p.nome LIKE ? OR t.nome LIKE ? OR t.telefone LIKE ? OR a.servico LIKE ? OR t.bairro LIKE ? OR t.cidade_uf LIKE ?)");
+      condicoes.push("(p.nome LIKE ? OR r.nome LIKE ? OR r.telefone LIKE ? OR a.servico LIKE ? OR r.bairro LIKE ? OR r.cidade_uf LIKE ?)");
       parametros.push(termo, termo, telefone, termo, termo, termo);
     }
     const onde = condicoes.length ? ` WHERE ${condicoes.join(" AND ")}` : "";
@@ -153,8 +162,8 @@
   function salvarAgendamento(dados, id = null) {
     executar("BEGIN");  // transação: confirma tudo ou desfaz tudo
     try {
-      const tutorId = salvarTutor(dados, id);
-      const petId = salvarPet(tutorId, dados.pet);
+      const responsavelId = salvarResponsavel(dados, id);
+      const petId = salvarPet(responsavelId, dados.pet);
       if (id) {
         executar("UPDATE agendamentos SET pet_id = ?, servico = ?, data_hora = ? WHERE id = ?", [petId, dados.servico, dados.data_hora, id]);
       } else {
@@ -171,28 +180,28 @@
     }
   }
 
-  function salvarTutor(dados, agendamento) {
-    const dono = consultar("SELECT id, nome FROM tutores WHERE telefone = ?", [dados.telefone])[0];
-    const tutorEmEdicao = agendamento
-      ? consultar("SELECT p.tutor_id FROM agendamentos a JOIN pets p ON p.id = a.pet_id WHERE a.id = ?", [agendamento])[0]?.[0]
+  function salvarResponsavel(dados, agendamento) {
+    const dono = consultar("SELECT id, nome FROM responsaveis WHERE telefone = ?", [dados.telefone])[0];
+    const responsavelEmEdicao = agendamento
+      ? consultar("SELECT p.responsavel_id FROM agendamentos a JOIN pets p ON p.id = a.pet_id WHERE a.id = ?", [agendamento])[0]?.[0]
       : null;
-    if (dono && dono[0] !== tutorEmEdicao && dono[1].toLowerCase() !== dados.tutor.toLowerCase()) {
+    if (dono && dono[0] !== responsavelEmEdicao && dono[1].toLowerCase() !== dados.responsavel.toLowerCase()) {
       throw new RegraNegocioErro(`O telefone ${formatarTelefone(dados.telefone)} já pertence ao cliente "${dono[1]}". Cada cliente tem um cadastro único.`);
     }
-    const tutorId = dono ? dono[0] : tutorEmEdicao;
-    const valores = [dados.tutor, dados.telefone, dados.cep, dados.logradouro, dados.numero, dados.bairro, dados.cidade_uf];
-    if (tutorId) {
-      executar("UPDATE tutores SET nome = ?, telefone = ?, cep = ?, logradouro = ?, numero = ?, bairro = ?, cidade_uf = ? WHERE id = ?", [...valores, tutorId]);
-      return tutorId;
+    const responsavelId = dono ? dono[0] : responsavelEmEdicao;
+    const valores = [dados.responsavel, dados.telefone, dados.cep, dados.logradouro, dados.numero, dados.bairro, dados.cidade_uf];
+    if (responsavelId) {
+      executar("UPDATE responsaveis SET nome = ?, telefone = ?, cep = ?, logradouro = ?, numero = ?, bairro = ?, cidade_uf = ? WHERE id = ?", [...valores, responsavelId]);
+      return responsavelId;
     }
-    executar("INSERT INTO tutores (nome, telefone, cep, logradouro, numero, bairro, cidade_uf) VALUES (?, ?, ?, ?, ?, ?, ?)", valores);
+    executar("INSERT INTO responsaveis (nome, telefone, cep, logradouro, numero, bairro, cidade_uf) VALUES (?, ?, ?, ?, ?, ?, ?)", valores);
     return ultimoIdInserido();
   }
 
-  function salvarPet(tutorId, nome) {
-    const pet = consultar("SELECT id FROM pets WHERE tutor_id = ? AND nome = ?", [tutorId, nome])[0];
+  function salvarPet(responsavelId, nome) {
+    const pet = consultar("SELECT id FROM pets WHERE responsavel_id = ? AND nome = ?", [responsavelId, nome])[0];
     if (pet) return pet[0];
-    executar("INSERT INTO pets (tutor_id, nome) VALUES (?, ?)", [tutorId, nome]);
+    executar("INSERT INTO pets (responsavel_id, nome) VALUES (?, ?)", [responsavelId, nome]);
     return ultimoIdInserido();
   }
 
@@ -223,12 +232,12 @@
     const valor = (id) => limparTexto($(id).value);
     const falhar = (id, mensagem) => { $(id).classList.add("erro"); $(id).focus(); throw new RegraNegocioErro(mensagem); };
     const dados = {
-      pet: valor("pet"), tutor: valor("tutor"), telefone: somenteDigitos($("telefone").value),
+      pet: valor("pet"), responsavel: valor("responsavel"), telefone: somenteDigitos($("telefone").value),
       cep: somenteDigitos($("cep").value), logradouro: valor("logradouro"), numero: valor("numero"),
       bairro: valor("bairro"), cidade_uf: valor("cidade_uf"), servico: valor("servico"),
     };
     if (!dados.pet) falhar("pet", "Informe o nome do pet.");
-    if (!dados.tutor) falhar("tutor", "Informe o nome do tutor.");
+    if (!dados.responsavel) falhar("responsavel", "Informe o nome do responsável.");
     if (![10, 11].includes(dados.telefone.length)) falhar("telefone", "Telefone inválido. Informe DDD + número (10 ou 11 dígitos).");
     if (dados.cep.length !== 8) falhar("cep", "O CEP deve ter exatamente 8 dígitos.");
     if (!dados.logradouro || !dados.bairro || !dados.cidade_uf) falhar("cep", "Endereço incompleto. Busque o CEP ou preencha manualmente.");
@@ -359,7 +368,7 @@
     if (!l) return;
     agendamentoId = l[0];
     const [iso, hora] = l[10].split(" ");
-    const valores = { pet: l[1], tutor: l[2], telefone: formatarTelefone(l[3]), cep: l[4], logradouro: l[5],
+    const valores = { pet: l[1], responsavel: l[2], telefone: formatarTelefone(l[3]), cep: l[4], logradouro: l[5],
                       numero: l[6], bairro: l[7], cidade_uf: l[8], servico: l[9], data: iso };
     for (const [campo, valor] of Object.entries(valores)) { $(campo).value = valor; $(campo).classList.remove("erro"); }
     ultimoCep = somenteDigitos(l[4]);
@@ -414,7 +423,7 @@
     evento.preventDefault();
     const dados = await salvar();
     if (!dados) return;
-    registrarLog("INSERÇÃO", `Agendamento Pet "${dados.pet}" (Tutor: ${dados.tutor}, Serviço: ${dados.servico}) cadastrado com sucesso.`);
+    registrarLog("INSERÇÃO", `Agendamento Pet "${dados.pet}" (Responsável: ${dados.responsavel}, Serviço: ${dados.servico}) cadastrado com sucesso.`);
     limparFormulario();
     aviso(`Agendamento ID ${dados.id} cadastrado!`);
   }
@@ -505,8 +514,13 @@
     preencherOpcoes();
     try {
       const SQL = await initSqlJs({ locateFile: (arquivo) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${arquivo}` });
-      banco = new SQL.Database(lerDoNavegador() ?? undefined);
+      const salvo = lerDoNavegador();
+      banco = new SQL.Database(salvo ?? await baixarArquivoPublicado("petshop.db", "arrayBuffer") ?? undefined);
       banco.exec(ESQUEMA);
+      if (!salvo) {   // primeiro acesso: começa com a agenda e o log publicados junto da página
+        gravarNoNavegador();
+        try { localStorage.setItem(CHAVE_LOG, (await baixarArquivoPublicado("log_agendamentos.txt", "text")) ?? ""); } catch { /* segue sem log */ }
+      }
     } catch (erro) {
       await caixaDeMensagem("Banco de dados", `Não foi possível iniciar o SQLite no navegador.\n\n${erro.message}`);
       return;
