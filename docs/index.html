@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Patinhas & Cia · Agenda</title>
+  <meta name="description" content="Agenda de atendimentos do pet shop Patinhas & Cia — protótipo RAD com SQLite e ViaCEP.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="marca">
+      <span class="logo" aria-hidden="true">🐾</span>
+      <div>
+        <h1>Patinhas &amp; Cia</h1>
+        <p>Agenda de atendimentos · Seg a Sáb, 08h às 18h · intervalos de 30 min</p>
+      </div>
+    </div>
+    <div class="acoes-topo">
+      <button type="button" class="btn ghost" id="btnBaixarDb" title="Baixar o arquivo SQLite">Baixar .db</button>
+      <button type="button" class="btn ghost" id="btnBaixarLog" title="Baixar log_agendamentos.txt">Baixar log</button>
+    </div>
+  </header>
+
+  <main>
+    <form id="form" class="cartao" novalidate autocomplete="off">
+      <div class="form-cabecalho">
+        <h2 id="tituloForm">Novo agendamento</h2>
+        <span class="selo" id="seloEdicao" hidden></span>
+      </div>
+
+      <div class="grade">
+        <fieldset>
+          <legend>Pet e tutor</legend>
+          <label>Nome do pet *<input id="pet" maxlength="60" required></label>
+          <label>Tutor *<input id="tutor" maxlength="80" required></label>
+          <label>Telefone (DDD + número) *<input id="telefone" inputmode="tel" maxlength="16" placeholder="(11) 91234-5678" required></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Endereço do tutor</legend>
+          <label>CEP *
+            <span class="linha-cep">
+              <input id="cep" inputmode="numeric" maxlength="9" placeholder="00000-000" required>
+              <button type="button" class="btn" id="btnCep">Buscar CEP</button>
+            </span>
+          </label>
+          <label class="check"><input type="checkbox" id="manual"> Inserir endereço manualmente (ViaCEP fora do ar)</label>
+          <div class="duas">
+            <label class="larga">Logradouro *<input id="logradouro" readonly required></label>
+            <label>Número *<input id="numero" maxlength="20" required></label>
+          </div>
+          <div class="duas">
+            <label class="larga">Bairro *<input id="bairro" readonly required></label>
+            <label>Cidade/UF *<input id="cidade_uf" readonly required></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Atendimento</legend>
+          <label>Serviço *
+            <select id="servico" required></select>
+          </label>
+          <label>Data *<input type="date" id="data" required></label>
+          <label>Horário disponível *
+            <select id="hora" required></select>
+          </label>
+          <p class="dica" id="dicaHorarios" aria-live="polite"></p>
+        </fieldset>
+      </div>
+
+      <div class="barra">
+        <button type="submit" class="btn primario" id="btnCadastrar">Cadastrar</button>
+        <button type="button" class="btn" id="btnAtualizar" disabled>Salvar alterações</button>
+        <button type="button" class="btn perigo" id="btnExcluir" disabled>Excluir</button>
+        <button type="button" class="btn ghost" id="btnLimpar">Limpar / Novo</button>
+      </div>
+    </form>
+
+    <section class="cartao">
+      <div class="form-cabecalho">
+        <h2>Agenda</h2>
+        <span class="contador" id="contador"></span>
+      </div>
+      <div class="tabela-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Pet</th><th>Tutor</th><th>Telefone</th><th>CEP</th>
+              <th>Logradouro</th><th>Nº</th><th>Bairro</th><th>Cidade/UF</th>
+              <th>Serviço</th><th>Data</th><th>Horário</th>
+            </tr>
+          </thead>
+          <tbody id="tabela"></tbody>
+        </table>
+        <p class="vazio" id="vazio" hidden>Nenhum agendamento ainda. Cadastre o primeiro acima.</p>
+      </div>
+      <p class="rodape-tabela">Clique em uma linha para editar ou excluir. Agendamentos já realizados aparecem esmaecidos.</p>
+    </section>
+
+    <section class="cartao">
+      <div class="form-cabecalho">
+        <h2>Log de auditoria</h2>
+        <span class="contador">log_agendamentos.txt</span>
+      </div>
+      <pre id="log" class="log"></pre>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    Protótipo RAD · dados salvos em SQLite dentro do seu navegador · endereço via <a href="https://viacep.com.br" target="_blank" rel="noopener">ViaCEP</a>.
+    A versão desktop (tkinter) está no <a href="https://github.com/roseniltonlopes/rad-petshop" target="_blank" rel="noopener">repositório</a>.
+  </footer>
+
+  <dialog id="dialogo">
+    <form method="dialog">
+      <h3 id="dlgTitulo"></h3>
+      <p id="dlgTexto"></p>
+      <div class="barra fim">
+        <button value="nao" class="btn ghost" id="dlgNao">Cancelar</button>
+        <button value="sim" class="btn primario" id="dlgSim">OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

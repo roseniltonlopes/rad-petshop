@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Relatório RAD – Patinhas & Cia</title>
+<style>
+  @page { size: A4; margin: 16mm 18mm; }
+  body { font: 10.3pt/1.45 "Segoe UI", Arial, sans-serif; color: #1f2a27; margin: 0; }
+  h1 { color: #2f6f5e; font-size: 19pt; margin: 0 0 2px; text-align: center; }
+  .sub { text-align: center; color: #5f6b67; font-size: 9.5pt; margin: 0 0 12px; }
+  h2 { color: #2f6f5e; font-size: 12.5pt; margin: 12px 0 4px; border-bottom: 1px solid #d9e5e0; padding-bottom: 2px; }
+  p, li { text-align: justify; }
+  ul { margin: 4px 0; padding-left: 18px; }
+  li { margin-bottom: 4px; }
+  code { font-family: Consolas, monospace; font-size: 9.3pt; background: #f1f5f3; padding: 0 3px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>Relatório de Implementação Ágil (RAD)</h1>
+<p class="sub">Patinhas &amp; Cia: Mini Sistema de Agendamento Veterinário / Pet Shop · Python 3 · tkinter · SQLite · ViaCEP</p>
+
+<h2>1. Decisões rápidas</h2>
+<p>O protótipo foi construído em ciclos curtos (modelar → montar tela → integrar → testar → ajustar). As escolhas que mais aceleraram a entrega foram:</p>
+<ul>
+  <li><b>Somente a biblioteca padrão do Python</b> (<code>tkinter</code>, <code>sqlite3</code>, <code>urllib.request</code>, <code>json</code>): nada precisa ser instalado para rodar a aplicação, e o banco é um único arquivo <code>petshop.db</code>.</li>
+  <li><b>Tela única com ttk</b>: formulário (Entry/Combobox), botões e Treeview na mesma janela, organizados em três blocos (Pet e tutor · Endereço · Atendimento). Não há janelas secundárias: alertas e confirmações usam apenas <code>messagebox</code>.</li>
+  <li><b>Regras isoladas da interface</b>: validação, limpeza de strings (<code>.strip()</code>, <code>.replace()</code>), acesso ao banco e consulta de CEP são funções independentes no mesmo script. Assim puderam ser testadas sem abrir a janela e reaproveitadas no gerador de dados fictícios.</li>
+  <li><b>Banco como garantia final</b>: todas as tabelas têm chave primária, <code>telefone UNIQUE</code> (um cadastro por cliente), <code>UNIQUE(tutor_id, nome)</code> para pets e <code>data_hora UNIQUE</code> nos agendamentos. Isso impede reservar um horário ocupado mesmo que a validação da tela falhe. Todas as operações usam transação com <i>rollback</i> e <code>try/except</code>.</li>
+  <li><b>API pública ViaCEP</b>: dispensou manter uma base de endereços, já que um único GET preenche logradouro, bairro e cidade/UF. Como a API pode ficar fora do ar, foi criada a opção <i>“Inserir endereço manualmente”</i>, oferecida automaticamente quando a consulta falha.</li>
+  <li><b>Regras de agenda centralizadas em constantes</b>: segunda a sábado, das 08h às 18h, em intervalos de 30 min e com até 180 dias de antecedência. Datas e horários passados são bloqueados, e o combo de horários exibe apenas horários livres e futuros.</li>
+  <li><b>Log de auditoria</b> em <code>log_agendamentos.txt</code>, aberto em modo <code>'a'</code>, com uma linha por consulta de CEP, inserção, atualização e exclusão.</li>
+</ul>
+
+<h2>2. Estratégia de teste</h2>
+<ul>
+  <li><b>Testes automatizados</b> (<code>test_regras.py</code>, 19 casos com <code>unittest</code>): data passada, horário já passado no dia, domingo, fora do expediente, data inexistente, antecedência máxima, limpeza de entradas, CRUD completo, horário ocupado, telefone único por cliente, reaproveitamento de cadastro, constraint UNIQUE no SQLite, API fora do ar (simulada com <code>mock</code>) e log em modo <code>'a'</code>. Cada teste usa um banco temporário e um “agora” fixo, então o resultado é o mesmo em qualquer dia.</li>
+  <li><b>Dados fictícios com Faker</b> (<code>gerar_dados_teste.py</code>): gera tutores, telefones e pets em pt_BR, consulta CEPs reais no ViaCEP e grava usando as mesmas funções da interface, populando o <code>petshop.db</code> e o <code>log_agendamentos.txt</code> entregues.</li>
+  <li><b>Teste na interface</b>: cadastro com busca de CEP, CEP inválido e inexistente, rede desligada (modo manual), clique na grade para editar, exclusão com confirmação e tentativa de reservar um horário ocupado. A versão web de demonstração também foi testada de forma automatizada no navegador (Playwright).</li>
+</ul>
+
+<h2>3. Visão de futuro (versão 2.0)</h2>
+<ul>
+  <li><b>Lembretes automáticos por WhatsApp/SMS</b> enviados ao tutor 24 h antes do atendimento, com confirmação ou cancelamento pelo próprio link. Isso reduz faltas e devolve horários à agenda.</li>
+  <li><b>Prontuário e histórico do pet</b>: espécie, raça, peso, vacinas aplicadas e próximas doses, com sugestão automática do agendamento de reforço e agenda separada por profissional (veterinário, banhista/tosador).</li>
+</ul>
+
+<h2>4. Entregáveis</h2>
+<p><code>petshop_app.py</code> (aplicação) · <code>petshop.db</code> (banco SQLite) · <code>log_agendamentos.txt</code> (log de auditoria) · <code>Relatorio_RAD.pdf</code> (este relatório). O repositório também contém os testes, o gerador de dados e uma versão web de demonstração publicada no GitHub Pages: <b>roseniltonlopes.github.io/rad-petshop</b>.</p>
+</body>
+</html>
